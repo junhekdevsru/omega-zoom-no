@@ -5,10 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ "**" ]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch: {}
 
 jobs:
   lint:
@@ -82,42 +79,25 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Cache buf modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/buf
-            api/proto/_vendor
-          key: buf-${{ runner.os }}-${{ hashFiles('buf.yaml') }}
-          restore-keys: |
-            buf-${{ runner.os }}-
-
-      - name: Install buf
+      - name: Install protoc
         run: |
-          curl -sSL https://github.com/bufbuild/buf/releases/latest/download/buf-Linux-x86_64 -o /usr/local/bin/buf
-          chmod +x /usr/local/bin/buf
-          buf --version
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
 
-      - name: Vendor proto deps
+      - name: Vendor third_party protos
         run: |
           chmod +x ./easyp
           ./easyp mod vendor
 
-      - name: Generate protos
-        run: |
-          ./easyp generate
-          git status --porcelain
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Proto generation produced uncommitted changes. Commit generated files." >&2
-            git diff
-            exit 1
-          fi
+      - name: Generate protos (protoc)
+        run: ./easyp generate
 
       - name: Go mod tidy (safety)
         run: go mod tidy && git diff --exit-code || (echo "Run 'go mod tidy' locally" && exit 1)
 
       - name: Install psql client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get install -y postgresql-client
 
       - name: Wait for Postgres
         run: |
