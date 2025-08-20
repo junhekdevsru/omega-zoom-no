@@ -54,6 +54,15 @@ ai-agent-manager/
 make test
 ```
 
+## Proto workflow
+
+```bash
+# сгенерировать все .proto (buf mod update + buf generate)
+./easyp generate
+
+# свендорить зависимости (googleapis, grpc-gateway) для оффлайн-генерации
+./easyp mod vendor
+
 ---
 
 ## Что уже работает

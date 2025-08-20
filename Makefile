@@ -5,7 +5,17 @@ APP := agentmgr
 PROTO_DIR := api/proto
 BIN_DIR := bin
 
-.PHONY: proto dev-up dev-down migrate-up migrate-down run lint tidy
+.PHONY: proto dev-up dev-down migrate-up migrate-down run lint tidy easyp-generate easyp-mod-vendor
+
+proto: easyp-generate
+
+easyp-generate:
+	@chmod +x ./easyp
+	./easyp generate
+
+easyp-mod-vendor:
+	@chmod +x ./easyp
+	./easyp mod vendor
 
 proto:
 	@chmod +x scripts/gen-proto.sh
