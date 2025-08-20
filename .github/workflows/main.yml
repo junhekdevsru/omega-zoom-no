@@ -69,10 +69,16 @@ jobs:
           redpanda start --mode dev-container --smp 1
           --overprovisioned --check=false
           --set redpanda.empty_seed_starts_cluster=true
+=======
+    branches: [ main ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch: {}   # ручной запуск через UI
 
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22.x'
@@ -111,9 +117,28 @@ jobs:
           PG_CONN: "postgres://agent:agent@localhost:5432/agentdb?sslmode=disable"
           MIGRATIONS_DIR: "migrations"
         run: go run ./cmd/migrate --direction=up
+=======
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+
+      - name: Install buf
+        run: |
+          curl -sSL https://github.com/bufbuild/buf/releases/latest/download/buf-Linux-x86_64 -o /usr/local/bin/buf
+          chmod +x /usr/local/bin/buf
+          buf --version
+
+      - name: Generate proto
+        run: |
+          chmod +x ./easyp
+          ./easyp mod vendor
+          ./easyp generate
+
 
       - name: Build
         run: go build ./...
+
 
       - name: Test (race)
         env:
@@ -122,3 +147,6 @@ jobs:
           MIGRATIONS_DIR: "migrations"
           KAFKA_BROKERS: "localhost:9092"
         run: go test -race -count=1 ./...
+=======
+      - name: Test
+        run: go test -race ./...
