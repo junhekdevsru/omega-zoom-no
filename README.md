@@ -53,3 +53,14 @@ ai-agent-manager/
 ```bash
 make test
 ```
+
+---
+
+## Что уже работает
+
+- `make dev-up` поднимает **Postgres** и **Redpanda (Kafka)**.
+- `make migrate-up` применяет миграции (простым встроенным раннером).
+- `make run` запускает gRPC‑сервер на `:8080` с:
+    - dev‑reflection (можно `grpcurl -plaintext localhost:8080 list`)
+    - `agentmgr.HealthService/Ping` (проверка связи)
+    - стандартным `grpc.health.v1.Health/Check` от gRPC
