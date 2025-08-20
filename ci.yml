@@ -4,16 +4,47 @@ on:
   push:
     branches: [ main, master ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "**" ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          check-latest: true
+          cache: true
+
+      - name: Cache Go build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: >
+            --timeout=5m
+            --out-format=github-actions
+
+  test:
     name: Build & Test
     runs-on: ubuntu-latest
+    needs: [lint]
 
     services:
       postgres:
@@ -22,8 +53,7 @@ jobs:
           POSTGRES_USER: agent
           POSTGRES_PASSWORD: agent
           POSTGRES_DB: agentdb
-        ports:
-          - 5432:5432
+        ports: [ "5432:5432" ]
         options: >-
           --health-cmd="pg_isready -U agent -d agentdb"
           --health-interval=5s
@@ -32,26 +62,21 @@ jobs:
 
       redpanda:
         image: docker.redpanda.com/redpandadata/redpanda:v24.1.10
-        ports:
-          - 9092:9092
-          - 9644:9644
+        ports: [ "9092:9092", "9644:9644" ]
         options: >-
           --health-cmd="curl -sSf http://localhost:9644/v1/status/ready || exit 1"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=30
-        # запуск в dev-режиме
         command: >
           redpanda start --mode dev-container --smp 1
           --overprovisioned --check=false
           --set redpanda.empty_seed_starts_cluster=true
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.22.x'
           check-latest: true
@@ -82,7 +107,6 @@ jobs:
         run: |
           ./easyp generate
           git status --porcelain
-          # гарантируем, что генерация детерминирована (нет грязных изменений)
           if [ -n "$(git status --porcelain)" ]; then
             echo "Proto generation produced uncommitted changes. Commit generated files." >&2
             git diff
@@ -96,9 +120,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Wait for Postgres
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
         run: |
           for i in {1..60}; do
             if pg_isready -h localhost -p 5432 -d agentdb -U agent; then
@@ -119,6 +140,5 @@ jobs:
           GRPC_ADDR: ":8080"
           PG_CONN: "postgres://agent:agent@localhost:5432/agentdb?sslmode=disable"
           MIGRATIONS_DIR: "migrations"
-          # Если тестам понадобится доступ к Redpanda:
           KAFKA_BROKERS: "localhost:9092"
         run: go test -race -count=1 ./...

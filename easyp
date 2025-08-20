@@ -3,7 +3,10 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROTO_DIR="${ROOT_DIR}/api/proto"
-VENDOR_DIR="${PROTO_DIR}/_vendor"
+OUT_DIR="${ROOT_DIR}"
+TP_DIR="${ROOT_DIR}/third_party"
+GA_DIR="${TP_DIR}/googleapis"
+GW_DIR="${TP_DIR}/grpc-gateway"
 
 need() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -12,49 +15,93 @@ need() {
   fi
 }
 
-cmd_generate() {
-  need buf
-  echo "▶ buf mod update"
-  (cd "${ROOT_DIR}" && buf mod update)
-  echo "▶ buf generate"
-  (cd "${ROOT_DIR}" && buf generate)
-  echo "✅ proto generated"
+cmd_mod_vendor() {
+  mkdir -p "${TP_DIR}"
+  if [ ! -d "${GA_DIR}/.git" ]; then
+    echo "▶ cloning googleapis..."
+    git clone --depth 1 https://github.com/googleapis/googleapis "${GA_DIR}"
+  else
+    echo "▶ updating googleapis..."
+    git -C "${GA_DIR}" pull --ff-only
+  fi
+
+  if [ ! -d "${GW_DIR}/.git" ]; then
+    echo "▶ cloning grpc-gateway..."
+    git clone --depth 1 https://github.com/grpc-ecosystem/grpc-gateway "${GW_DIR}"
+  else
+    echo "▶ updating grpc-gateway..."
+    git -C "${GW_DIR}" pull --ff-only
+  fi
+
+  echo "✅ third_party deps ready:"
+  echo "   - ${GA_DIR}"
+  echo "   - ${GW_DIR}"
 }
 
-cmd_mod_vendor() {
-  need buf
-  mkdir -p "${VENDOR_DIR}"
-  echo "▶ vendoring proto deps into ${VENDOR_DIR}"
-  buf export buf.build/googleapis/googleapis \
-    --config "${ROOT_DIR}/buf.yaml" \
-    --output "${VENDOR_DIR}/googleapis"
-  buf export buf.build/grpc-ecosystem/grpc-gateway \
-    --config "${ROOT_DIR}/buf.yaml" \
-    --output "${VENDOR_DIR}/grpc-gateway"
-  echo "✅ proto deps vendored"
+install_go_plugins() {
+  # ставим генераторы кода (в $GOBIN или $GOPATH/bin)
+  echo "▶ installing protoc plugins..."
+  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+  # (опц.) если позже добавим gateway/openapi:
+  # go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+  # go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
+}
+
+cmd_generate() {
+  need protoc
+  install_go_plugins
+
+  # Путь к плагинам
+  GOBIN_DIR="${GOBIN:-$(go env GOPATH)/bin}"
+  export PATH="${GOBIN_DIR}:${PATH}"
+
+  echo "▶ generating go/grpc from .proto..."
+  # собираем список proto
+  mapfile -d '' PROTOS < <(find "${PROTO_DIR}" -name '*.proto' -print0)
+
+  if [ ${#PROTOS[@]} -eq 0 ]; then
+    echo "⚠️ no .proto files found in ${PROTO_DIR}"
+    exit 0
+  fi
+
+  # Базовые include-пути: свои + googleapis + grpc-gateway
+  INC=( -I "${PROTO_DIR}" -I "${GA_DIR}" -I "${GW_DIR}" )
+
+  # Генерим сразу все файлы одним вызовом
+  protoc "${INC[@]}" \
+    --go_out="${OUT_DIR}" --go_opt=paths=source_relative \
+    --go-grpc_out="${OUT_DIR}" --go-grpc_opt=paths=source_relative \
+    "${PROTOS[@]}"
+
+  echo "✅ proto generated"
 }
 
 usage() {
   cat <<USAGE
-easyp — helper for proto workflow
+easyp — proto helper
 
 Usage:
-  ./easyp generate         # update buf.lock + generate all .proto
-  ./easyp mod vendor       # vendor proto deps into api/proto/_vendor
+  ./easyp mod vendor   # clone/update third_party deps (googleapis, grpc-gateway)
+  ./easyp generate     # generate Go stubs via protoc (no buf)
+
+Notes:
+  - Requires: git, protoc, Go toolchain
+  - Installs protoc-gen-go and protoc-gen-go-grpc automatically
 USAGE
 }
 
 main() {
-  local sub="${1:-}"
+  sub="${1:-}"
   case "${sub}" in
-    generate) cmd_generate ;;
     mod)
-      local sub2="${2:-}"
+      sub2="${2:-}"
       case "${sub2}" in
         vendor) cmd_mod_vendor ;;
         *) usage; exit 1 ;;
       esac
       ;;
+    generate) cmd_generate ;;
     *) usage; exit 1 ;;
   esac
 }

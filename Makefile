@@ -9,6 +9,11 @@ BIN_DIR := bin
 
 proto: easyp-generate
 
+proto:
+	@chmod +x ./easyp
+	./easyp generate
+
+
 easyp-generate:
 	@chmod +x ./easyp
 	./easyp generate
@@ -16,10 +21,6 @@ easyp-generate:
 easyp-mod-vendor:
 	@chmod +x ./easyp
 	./easyp mod vendor
-
-proto:
-	@chmod +x scripts/gen-proto.sh
-	@scripts/gen-proto.sh
 
 dev-up:
 	docker compose -f deploy/docker-compose.yml up -d
