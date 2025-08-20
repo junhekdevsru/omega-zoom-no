@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+      POSTGRES_DB: agentdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.1.10
+    command:
+      - redpanda start --mode dev-container --smp 1 --overprovisioned --check=false --set redpanda.empty_seed_starts_cluster=true
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+
+volumes:
+  pgdata: {}
