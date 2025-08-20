@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package agentmgr;
+
+option go_package = "ai-agent-manager/api/proto/agentmgr;agentmgr";
+
+import "google/protobuf/empty.proto";
+
+// Easy healthcheck
+service HealthService {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

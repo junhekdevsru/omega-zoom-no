@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROTO_DIR="${ROOT_DIR}/api/proto"
+VENDOR_DIR="${PROTO_DIR}/_vendor"
+
+need() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "❌ missing required tool: $1" >&2
+    exit 1
+  fi
+}
+
+cmd_generate() {
+  need buf
+  echo "▶ buf mod update"
+  (cd "${ROOT_DIR}" && buf mod update)
+  echo "▶ buf generate"
+  (cd "${ROOT_DIR}" && buf generate)
+  echo "✅ proto generated"
+}
+
+cmd_mod_vendor() {
+  need buf
+  mkdir -p "${VENDOR_DIR}"
+  echo "▶ vendoring proto deps into ${VENDOR_DIR}"
+  buf export buf.build/googleapis/googleapis \
+    --config "${ROOT_DIR}/buf.yaml" \
+    --output "${VENDOR_DIR}/googleapis"
+  buf export buf.build/grpc-ecosystem/grpc-gateway \
+    --config "${ROOT_DIR}/buf.yaml" \
+    --output "${VENDOR_DIR}/grpc-gateway"
+  echo "✅ proto deps vendored"
+}
+
+usage() {
+  cat <<USAGE
+easyp — helper for proto workflow
+
+Usage:
+  ./easyp generate         # update buf.lock + generate all .proto
+  ./easyp mod vendor       # vendor proto deps into api/proto/_vendor
+USAGE
+}
+
+main() {
+  local sub="${1:-}"
+  case "${sub}" in
+    generate) cmd_generate ;;
+    mod)
+      local sub2="${2:-}"
+      case "${sub2}" in
+        vendor) cmd_mod_vendor ;;
+        *) usage; exit 1 ;;
+      esac
+      ;;
+    *) usage; exit 1 ;;
+  esac
+}
+
+main "$@"
