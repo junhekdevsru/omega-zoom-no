@@ -1,0 +1,71 @@
+run:
+  timeout: 5m
+  tests: true
+  allow-parallel-runners: true
+
+# Игнорируем автогенерируемые файлы и вендор
+issues:
+  exclude-use-default: false
+  exclude:
+    - "error return value not checked.*(Close|Write|Flush|Stop|Encode|Decode)"
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - errcheck
+    - typecheck
+    - unused
+    - gocritic
+    - gofumpt          # форматирование
+    - revive           # стиль/комментарии вместо golint
+    - prealloc         # prealloc подсказки
+    - dupl             # дублирование (можно выключить, если шумит)
+  disable:
+    - depguard         # включим позже, когда зафиксируем правила
+
+linters-settings:
+  gofumpt:
+    module-path: ai-agent-manager
+    extra-rules: true
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+        arguments:
+          - disableStutteringCheck
+      - name: unnecessary-stmt
+      - name: indent-error-flow
+      - name: var-naming
+      - name: package-comments
+        severity: info
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+      - experimental
+    settings:
+      hugeParam:
+        sizeThreshold: 256
+  dupl:
+    threshold: 200
+
+# Скипаем всё сгенерированное/вендор
+skip-files:
+  - ".*_gen\\.go$"
+  - ".*\\.pb\\.go$"
+  - ".*_mock\\.go$"
+  - "^api/proto/_vendor/.*"
+
+skip-dirs:
+  - api/proto/_vendor
+  - vendor
+  - bin
+
+# Порог цикломатической сложности (можно подкрутить)
+complexity:
+  cyclo: 20
