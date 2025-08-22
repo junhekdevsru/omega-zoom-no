@@ -1,6 +1,6 @@
 syntax = "proto3";
-package agentmgr;
-option go_package = "ai-agent-manager/api/proto/agent-manager;agent-manage";
+package agentmanager;
+option go_package = "ai-agent-manager/api/proto/agentmanager;agentmanager";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

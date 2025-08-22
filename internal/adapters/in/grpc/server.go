@@ -1,7 +1,7 @@
 package grpc
 
 import (
-	"ai-agent-manager/api/proto/agent-manager"
+	"ai-agent-manager/api/proto/agentmanager"
 	"ai-agent-manager/internal/platform/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
