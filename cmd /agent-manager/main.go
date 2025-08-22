@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	logx "github.com/junhekdevsru/ai-common-lib/logx"
+
 	"ai-agent-manager/internal/adapters/in/grpc"
 	"ai-agent-manager/internal/platform/config"
 	"ai-agent-manager/internal/platform/db"
@@ -18,46 +20,42 @@ import (
 )
 
 func main() {
-	log := observability.NewLogger()
-	cfg := config.MustLoad()
+	base := observability.NewLogger() // zerolog.Logger
+	l := logx.New(base)               // logx.Logger
 
+	cfg := config.MustLoad()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// DB connect
 	pool, err := db.Connect(ctx, cfg)
 	if err != nil {
-		log.Fatal.Err(err).Msg("db connection failed")
+		base.Fatal().Err(err).Msg("db connect failed")
 	}
 	defer pool.Close()
 
-	// gRPC server
-	srv := grpc.NewServer(log, cfg, pool)
+	srv := grpc.NewServer(l, cfg, pool)
 
-	// standart grpc-health
-	health := grpc.health.NewServer()
+	health := grpc_health.NewServer()
 	grpc_health_v1.RegisterHealthServer(srv, health)
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddr)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to listen")
+		base.Fatal().Err(err).Msg("listen failed")
 	}
 
-	// graceful shutdown
 	go func() {
-		log.Info().Str("addr", cfg.GRPCAddr).Msg("gRPC listening")
+		l.Info("gRPC listening", "addr", cfg.GRPCAddr)
 		if err := srv.Serve(lis); err != nil {
-			log.Error().Err(err).Msg("gRPC server stopped")
+			l.Error(err, "gRPC server stopped")
 			cancel()
 		}
 	}()
 
-	// handle signals
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 	select {
 	case <-sigc:
-		log.Info().Msg("shutdown signal")
+		l.Info("shutdown signal")
 	case <-ctx.Done():
 	}
 
@@ -65,8 +63,8 @@ func main() {
 	defer stCancel()
 
 	srv.GracefulStop()
-	if stCtx.Err() == context.DeadlineExceeded {
+	if stCtx.Err() != nil {
 		srv.Stop()
 	}
-	log.Info().Msg("bye")
+	l.Info("bye")
 }

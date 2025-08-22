@@ -16,13 +16,9 @@ func Connect(ctx context.Context, cfg config.Config) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := ping(ctx, pool); err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, err
 	}
 	return pool, nil
-}
-
-func ping(ctx context.Context, pool *pgxpool.Pool) error {
-	return pool.Ping(ctx)
 }

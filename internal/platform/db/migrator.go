@@ -2,23 +2,15 @@ package db
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"ai-agent-manager/internal/platform/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-//go:embed ../../migrations/*.sql
-var _migrationsFS embed.FS // подсказка: для простоты embed лучше не использовать относительные пути
-// Примечание: для embed относительный путь должен быть от этого пакета.
-// Упростим: миграции будем читать с диска (cfg.Migrations).
-
-// ApplyMigrations — простой мигратор: файлы в каталоге применяются по имени
 func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool, dir string, direction string) error {
 	entries, err := filepath.Glob(filepath.Join(dir, "*.sql"))
 	if err != nil {
@@ -64,7 +56,6 @@ CREATE TABLE IF NOT EXISTS schema_migrations(
 			}
 		}
 	case "down":
-		// Для простоты: no-op (или можно удалить таблицы/записи вручную)
 		return fmt.Errorf("down not implemented in simple migrator")
 	default:
 		return fmt.Errorf("unknown direction: %s", direction)
