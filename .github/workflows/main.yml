@@ -75,10 +75,6 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=30
-        command: >
-          redpanda start --mode dev-container --smp 1
-          --overprovisioned --check=false
-          --set redpanda.empty_seed_starts_cluster=true
 
     steps:
       - name: Checkout
