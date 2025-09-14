@@ -1,0 +1,82 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Generated protobuf files
+pkg/generate/
+*.pb.go
+*_grpc.pb.go
+
+# Config files with secrets
+*.env
+.env.*
+config/local.yaml
+config/development.yaml
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+/cmd/server/server
+/cmd/migrate/migrate
+
+# Docker
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Migration files backup
+migrations/*.backup
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+
+# Local development
+local/
+dev/
