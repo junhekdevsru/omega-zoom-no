@@ -1,44 +1,22 @@
-SHELL := /bin/bash
+.PHONY: proto clean-proto help
 
-.PHONY: proto dev-up dev-down migrate-up migrate-down run run-gateway lint tidy test easyp-generate easyp-mod-vendor
+# Генерация protobuf файлов
+proto: clean-proto
+	@echo "Генерация Go кода из protobuf файлов..."
+	@mkdir -p pkg/generate/contracts
+	find api/proto -name "*.proto" | xargs protoc --proto_path=api/proto \
+		--go_out=pkg/generate/contracts \
+		--go_opt=paths=source_relative
+	@echo "Генерация protobuf файлов завершена!"
 
-proto: easyp-generate
+# Очистка сгенерированных файлов
+clean-proto:
+	@echo "Очистка старых сгенерированных файлов..."
+	rm -rf pkg/generate/contracts
 
-easyp-generate:
-	@chmod +x ./easyp
-	./easyp generate
-
-easyp-mod-vendor:
-	@chmod +x ./easyp
-	./easyp mod vendor
-
-dev-up:
-	docker compose -f deploy/docker-compose.yml up -d
-	@chmod +x scripts/dev-wait.sh && scripts/dev-wait.sh
-
-dev-down:
-	docker compose -f deploy/docker-compose.yml down -v
-
-migrate-up:
-	go run ./cmd/migrate --direction=up
-
-migrate-down:
-	go run ./cmd/migrate --direction=down
-
-run:
-	go run ./cmd/agentmgr
-
-run-gateway:
-	HTTP_ADDR=":8082" go run ./cmd/agentmgr
-
-lint:
-	@echo "add golangci-lint later"
-
-tidy:
-	go mod tidy
-
-test:
-	GRPC_ADDR=":8080" \
-	PG_CONN="postgres://agent:agent@localhost:5432/agentdb?sslmode=disable" \
-	MIGRATIONS_DIR="migrations" \
-	go test -race -count=1 ./...
+# Помощь
+help:
+	@echo "Доступные команды:"
+	@echo "  make proto       - Генерация Go кода из protobuf файлов"
+	@echo "  make clean-proto - Удаление сгенерированных protobuf файлов"
+	@echo "  make help        - Показать эту справку"

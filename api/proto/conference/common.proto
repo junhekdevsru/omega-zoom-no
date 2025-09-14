@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package conference;
+
+option go_package = "github.com/junhekdevsru/omega-zoom-no/api/proto/conference;conference";
+
+import "google/protobuf/timestamp.proto";
+
+// Роли участников конференции
+enum Role {
+  // Роль не указана
+  ROLE_UNSPECIFIED = 0;
+  // Ведущий конференции
+  ROLE_HOST = 1;
+  // Спикер конференции
+  ROLE_SPEAKER = 2;
+  // Участник конференции
+  ROLE_ATTENDEE = 3;
+}
+
+// Политика доступа
+enum AccessPolicy {
+  // Политика доступа не указана
+  ACCESS_POLICY_UNSPECIFIED = 0;
+  // Публичный доступ
+  ACCESS_PUBLIC = 1;
+  // Приватный доступ
+  ACCESS_PRIVATE = 2;
+}
+
+// Статус встречи
+enum MeetingStatus {
+  // Статус встречи не указан
+  MEETING_STATUS_UNSPECIFIED = 0;
+  // Встреча запланирована
+  MEETING_SCHEDULED = 1;
+  // Встреча активна
+  MEETING_ACTIVE = 2;
+  // Встреча завершена
+  MEETING_ENDED = 3;
+  // Встреча отменена
+  MEETING_CANCELED = 4;
+}
+
+// Информация
+message PageInfp {
+  string next_page_token = 1; // Токен следующей страницы
+}
+
+// Унифицированная ветка времени создания и обновления
+message Audit {
+  google.protobuf.Timestamp created_at = 1; // Время создания
+  google.protobuf.Timestamp updated_at = 2; // Время обновления
+}

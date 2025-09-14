@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package conference;
+option go_package = "github.com/junhekdevsru/omega-zoom-no/api/proto/conference;conference";
+
+import "google/protobuf/timestamp.proto";
+import "conference/common.proto";
+
+// Объекты
+message Meeting {
+  string id = 1;
+  string room_id = 3; // ID комнаты
+  string title = 2; // Название встречи
+  AccessPolicy access_policy = 4; // Политика доступа
+
+  google.protobuf.Timestamp start_at = 5; // Время начала встречи
+  google.protobuf.Timestamp end_at = 6; // Время окончания встречи
+
+  MeetingStatus status = 7; // Статус встречи
+  Audit audit = 8; // Время создания и обновления
+}
+
+// Запросы и ответы
+message ScheduleMeetingRequest {
+  string room_id = 1; // ID комнаты
+  string title = 2; // Название встречи
+  AccessPolicy access_policy = 3; // Политика доступа
+
+  google.protobuf.Timestamp start_at = 4; // Время начала встречи
+  google.protobuf.Timestamp end_at = 5; // Время окончания встречи
+}
+
+message GetMeetingRequest {
+  string meeting_id = 1; // ID встречи
+}
+
+message ListMeetingsRequest {
+  string room_id = 1; // ID комнаты
+  int32 page_size = 2; // Количество элементов на странице
+  string page_token = 3; // Токен страницы
+
+  google.protobuf.Timestamp from = 4; // Время начала диапазона
+  google.protobuf.Timestamp to = 5; // Время окончания диапазона
+  MeetingStatus status = 6; // Фильтр по статусу встречи
+}
+
+message ListMeetingsResponse {
+  repeated Meeting meetings = 1; // Список встреч
+  string next_page_token = 2; // Информация о странице
+}
+
+message CancelMeetingRequest {
+  string meeting_id = 1; // ID встречи
+}
+
+message UpdateMeetingRequest {
+  string meeting_id = 1; // ID встречи
+  string title = 2; // Название встречи
+  AccessPolicy access_policy = 3; // Политика доступа
+
+  google.protobuf.Timestamp start_at = 4; // Время начала встречи
+  google.protobuf.Timestamp end_at = 5; // Время окончания встречи
+}

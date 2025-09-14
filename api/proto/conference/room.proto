@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package conference;
+option go_package = "github.com/junhekdevsru/omega-zoom-no/api/proto/conference;conference";
+
+import "google/protobuf/timestamp.proto";
+import "conference/common.proto";
+
+// Объекты
+message Room {
+  string id = 1;
+  string owener_id = 2; // ID владельца комнаты
+  string name = 3; // Название комнаты
+  bool is_private = 4; // Приватная комната или нет
+  int32 capacity = 5; // Вместимость комнаты
+  google.protobuf.Timestamp created_at = 6; // Время создания комнаты
+  google.protobuf.Timestamp updated_at = 7; // Время обновления комнаты
+}
+
+// Владельцы комнат
+message Member {
+  string room_id = 1; // ID комнаты
+  string user_id = 2; // ID пользователя
+  Role role = 3; // Роль пользователя в комнате
+  google.protobuf.Timestamp joined_at = 4; // Время присоединения к комнате
+  google.protobuf.Timestamp left_at = 5; // Время выхода из комнаты
+}
+
+// Запросы и ответы
+message CreateRoomRequest {
+  string owener_id = 1; // ID владельца комнаты
+  string name = 2; // Название комнаты
+  bool is_private = 3; // Приватная комната или нет
+  int32 capacity = 4; // Вместимость комнаты
+}
+
+message GetRoomResponse {
+  Room room = 1; // Созданная комната
+}
+
+message ListRoomsRequest {
+  string owener_id = 1; // ID владельца комнаты
+  int32 page_size = 2; // Количество комнат на странице
+  string page_token = 3; // Токен страницы
+}
+
+message ListRoomsResponse {
+  repeated Room rooms = 1; // Список комнат
+  string next_room_token = 2; // Информация о странице
+}
+
+message CloseRoomRequest {
+  string room_id = 1; // ID комнаты
+}
+
+message CreateJoinTokenRequest {
+  string room_id = 1; // ID комнаты
+  string user_id = 2; // ID пользователя
+  Role role = 3; // Роль пользователя в комнате
+  int32 ttl_sec = 4; // Время жизни токена в секундах
+}
+
+message CreateJoinTokenResponse {
+  string token = 1; // Токен для присоединения к комнате
+}

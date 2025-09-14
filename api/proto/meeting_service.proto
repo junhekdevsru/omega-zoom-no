@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package conference;
+option go_package = "github.com/junhekdevsru/omega-zoom-no/api/proto/conference;conference";
+
+import "google/protobuf/timestamp.proto";
+import "conference/common.proto";
+import "conference/meeting.proto";
+
+service MeetingService {
+  rpc ScheduleMeeting(ScheduleMeetingRequest) returns (Meeting);
+
+  rpc GetMeeting(GetMeetingRequest) returns (Meeting);
+
+  rpc ListMeetings(ListMeetingsRequest) returns (ListMeetingsResponse);
+
+  rpc CancelMeeting(CancelMeetingRequest) returns (Meeting);
+
+  rpc UpdateMeeting(UpdateMeetingRequest) returns (Meeting);
+}

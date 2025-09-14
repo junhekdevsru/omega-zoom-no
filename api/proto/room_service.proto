@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package conference;
+option go_package = "github.com/junhekdevsru/omega-zoom-no/api/proto/conference;conference";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "conference/common.proto";
+import "conference/room.proto";
+
+service RoomService {
+  rpc CreateRoom(CreateRoomRequest) returns (GetRoomResponse);
+
+  rpc GetRoom(GetRoomRequest) returns (GetRoomResponse);
+
+  rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse);
+
+  rpc CloseRoom(CloseRoomRequest) returns (google.protobuf.Empty);
+
+  rpc CreateJoinToken(CreateJoinTokenRequest) returns (CreateJoinTokenResponse);
+}
+
+// Дополнительное сообщение для GetRoom, которого нет в room.proto
+message GetRoomRequest {
+  string room_id = 1;
+}
